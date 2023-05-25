@@ -14,43 +14,50 @@
 #
 
 import logging
-
-from autopts.wid import generic_wid_hdl
+import sys
 from autopts.pybtp import btp
+from autopts.wid.sm import sm_wid_hdl as gen_wid_hdl
 from autopts.ptsprojects.stack import get_stack
-from autopts.pybtp.types import WIDParams
 
 log = logging.debug
 
 
 def sm_wid_hdl(wid, description, test_case_name):
-    log(f'{sm_wid_hdl.__name__}, {wid}, {description}, {test_case_name}')
-    return generic_wid_hdl(wid, description, test_case_name, [__name__, 'autopts.wid.sm'])
+    log("%s, %r, %r, %s", sm_wid_hdl.__name__, wid, description,
+        test_case_name)
+    module = sys.modules[__name__]
+    wid_str = f'hdl_wid_{wid}'
+
+    if hasattr(module, wid_str):
+        handler = getattr(module, wid_str)
+        return handler(description)
+    else:
+        return gen_wid_hdl(wid, description, test_case_name, False)
 
 
 # wid handlers section begin
-def hdl_wid_100(_: WIDParams):
+def hdl_wid_100(desc):
     btp.gap_conn()
     btp.gap_wait_for_connection()
     btp.gap_pair()
     return True
 
 
-def hdl_wid_102(_: WIDParams):
+def hdl_wid_102(desc):
     btp.gap_disconn()
     return True
 
 
-def hdl_wid_108(_: WIDParams):
+def hdl_wid_108(desc):
     return True
 
 
-def hdl_wid_109(_: WIDParams):
+def hdl_wid_109(desc):
     btp.gap_pair()
     return True
 
 
-def hdl_wid_115(_: WIDParams):
+def hdl_wid_115(desc):
     stack = get_stack()
     btp.gap_set_conn()
     btp.gap_adv_ind_on(ad=stack.gap.ad)

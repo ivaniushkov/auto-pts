@@ -16,6 +16,7 @@
 import logging
 import re
 import struct
+import sys
 from time import sleep
 
 from autopts.ptsprojects.stack import get_stack
@@ -23,14 +24,20 @@ from autopts.ptsprojects.testcase import MMI
 from autopts.pybtp import btp, defs
 from autopts.pybtp.btp import pts_addr_get, pts_addr_type_get
 from autopts.pybtp.types import WIDParams, UUID
-from autopts.wid import generic_wid_hdl
 
 log = logging.debug
 
 
-def bap_wid_hdl(wid, description, test_case_name):
-    log(f'{bap_wid_hdl.__name__}, {wid}, {description}, {test_case_name}')
-    return generic_wid_hdl(wid, description, test_case_name, [__name__])
+def bap_wid_hdl(wid, description, test_case_name, logs=True):
+    if logs:
+        log(f'{bap_wid_hdl.__name__}, {wid}, {description}, {test_case_name}')
+    module = sys.modules[__name__]
+
+    try:
+        handler = getattr(module, f'hdl_wid_{wid}')
+        return handler(WIDParams(wid, description, test_case_name))
+    except AttributeError as e:
+        logging.exception(e)
 
 
 # wid handlers section begin
